@@ -133,31 +133,38 @@ fail2ban_jails_config:
 clamav_scan_conf: "/etc/clamd.d/scan.conf"
 
 clamav_scan_settings:
-  # Remove the Example line that causes warnings
+  # --- Existing Settings ---
   Example: false
-
-  # Socket configuration
   LocalSocket: "/run/clamd.scan/clamd.sock"
   LocalSocketGroup: "clamscan"
-  LocalSocketMode: "666"
-
-  # Performance & limits
+  LocalSocketMode: "660"
   MaxDirectoryRecursion: "20"
   MaxScanSize: "100M"
   MaxFileSize: "25M"
-
-  # Logging
   LogTime: "yes"
 
-  # Multiple exclusion paths
+  # --- Recommended Improvements ---
+  # 1. Performance Tuning
+  MaxThreads: 4             # Limits CPU impact; adjust based on CPU cores
+  ReadTimeout: 180          # Prevents clamd from hanging on slow I/O
+ 
+  # 2. Hardening
+  FollowDirectorySymlinks: "no" # Prevents "symlink race" attacks
+  FollowFileSymlinks: "no"      # Ensures ClamAV only scans the intended files
+ 
+  # 3. Enhanced Detection
+  AlertBrokenExecutables: "yes" # Flags malformed binaries (often a sign of tampering)
+  StructuredDataDetection: "yes" # Can detect SSNs or Credit Card patterns
+ 
+  # --- Exclusions ---
   ExcludePath:
-    - "^/sys/"
-    - "^/proc/"
-    - "^/dev/"
-    - "^/run/"
-    - "^/tmp/systemd-private"
-    - "^/home/"
-    - "^/root/"
+    - "^/sys(/|$)"
+    - "^/proc(/|$)"
+    - "^/dev(/|$)"
+    - "^/run(/|$)"
+    - "^/tmp/systemd-private-.*(/|$)"
+    - "^/home(/|$)"
+    - "^/root(/|$)"
 
 # ================================================================
 # OPTIONAL: Generic cron controls
