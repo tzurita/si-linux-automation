@@ -1,0 +1,9 @@
+# Fail2ban
+# Default settings (Generic)
+fail2ban_ignoreips:
+  - "127.0.0.1/8"
+  - "::1"
+
+# Splunk Settings
+security_splunk_indexer: ""
+security_splunk_version: "9.1.7"

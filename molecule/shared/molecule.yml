@@ -1,0 +1,27 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: podman
+platforms:
+  - name: instance
+    image: registry.access.redhat.com/ubi9/ubi-init:latest
+    tmpfs:
+      - /run
+      - /tmp
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    privileged: true
+    command: "/usr/sbin/init"
+    pre_build_image: true
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      # 'callbacks_enabled' replaces 'callback_whitelist' in Ansible 2.11+
+      callbacks_enabled: timer,profile_tasks,yaml
+      # Ensure python interpreter is found automatically in the container
+      interpreter_python: auto_silent
+verifier:
+  name: ansible

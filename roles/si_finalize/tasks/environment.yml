@@ -1,0 +1,108 @@
+---
+- name: "Env | Prepare and Dotfiles"
+  become: true
+  become_user: zuritat
+  block:
+    - name: Ensure dotfiles repository is cloned
+      ansible.builtin.git:
+        repo: "{{ dotfiles_repo }}"
+        dest: "{{ dotfiles_repo_local_destination }}"
+        version: "{{ dotfiles_repo_version | default('master') }}"
+        accept_hostkey: true
+        update: true
+
+    - name: "Prep | Remove default shell artifacts before symlinking"
+      ansible.builtin.file:
+        path: "{{ dotfiles_home }}/{{ item }}"
+        state: absent
+      loop:
+        - ".zshrc"
+        - ".zshrc.pre-oh-my-zsh"
+        - ".git" # Cleanup any stray git init in home
+
+    - name: "Prep | Check if .config is a physical directory"
+      ansible.builtin.stat:
+        path: "{{ dotfiles_home }}/.config"
+      register: config_dir_stat
+
+    - name: "Prep | Remove physical .config directory to allow symlinking"
+      ansible.builtin.file:
+        path: "{{ dotfiles_home }}/.config"
+        state: absent
+      # Only delete if it's a real directory. If it's a link, we're good.
+      when: config_dir_stat.stat.exists and not config_dir_stat.stat.islnk
+
+    - name: "Dotfiles | Find all top-level items in repo"
+      ansible.builtin.find:
+        paths: "{{ dotfiles_repo_local_destination }}"
+        recurse: false
+        hidden: true
+        file_type: any
+        excludes: ".git"
+      register: repo_top_level
+
+    - name: "Dotfiles | Symlink everything from repo to home"
+      ansible.builtin.file:
+        src: "{{ item.path }}"
+        dest: "{{ dotfiles_home }}/{{ item.path | basename }}"
+        state: link
+        force: true
+        owner: "zuritat"
+        group: "zuritat"
+      loop: "{{ repo_top_level.files | default([]) }}"
+
+- name: "Env | XDG and Oh My Zsh Setup"
+  become: true
+  become_user: zuritat
+  block:
+    - name: Ensure XDG and Application directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: zuritat
+        group: zuritat
+        mode: '0755'
+      loop:
+        - "{{ xdg_data_home }}"
+        - "{{ xdg_state_home }}/zsh"
+        - "{{ xdg_bin_home }}"
+        - "{{ zsh_dir }}"
+        - "{{ cargo_home }}"
+
+    - name: Install Oh My Zsh Framework (via Git)
+      ansible.builtin.git:
+        repo: "https://github.com/ohmyzsh/ohmyzsh.git"
+        dest: "{{ zsh_dir }}"
+        depth: 1
+        version: master
+
+    - name: Install Zsh Plugins from Variables
+      ansible.builtin.git:
+        repo: "{{ item.repo }}"
+        dest: "{{ zsh_dir }}/custom/plugins/{{ item.name }}"
+        version: master
+        depth: 1
+      loop: "{{ zsh_plugins }}"
+
+- name: "Env | Rust & Tools"
+  become: true
+  become_user: zuritat
+  block:
+    - name: Download Oh My Posh install script
+      ansible.builtin.get_url:
+        url: https://ohmyposh.dev/install.sh
+        dest: /tmp/install_ohmyposh.sh
+        mode: '0700'
+
+    - name: Run Oh My Posh installer
+      ansible.builtin.command:
+        cmd: "/tmp/install_ohmyposh.sh -d {{ xdg_bin_home }}"
+        creates: "{{ xdg_bin_home }}/oh-my-posh"
+
+    - name: Install eza via Cargo
+      ansible.builtin.command:
+        cmd: "cargo install eza"
+        creates: "{{ cargo_home }}/bin/eza"
+      environment:
+        CARGO_HOME: "{{ cargo_home }}"
+        PATH: "{{ ansible_env.PATH }}:{{ cargo_home }}/bin"

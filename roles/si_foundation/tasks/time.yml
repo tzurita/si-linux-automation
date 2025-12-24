@@ -1,0 +1,9 @@
+---
+- name: "Set System Timezone"
+  ansible.builtin.timezone:
+    name: "{{ system_timezone }}"
+
+- name: "Configure NTP (via RHEL System Role)"
+  ansible.builtin.include_role:
+    name: redhat.rhel_system_roles.timesync
+    # when: not (is_test_container | default(false))

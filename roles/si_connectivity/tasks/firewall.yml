@@ -1,0 +1,5 @@
+---
+- name: "Configure FirewallD via RHEL Role"
+  ansible.builtin.include_role:
+    name: redhat.rhel_system_roles.firewall
+    # when: not (is_test_container | default(false))

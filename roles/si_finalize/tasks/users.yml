@@ -1,0 +1,31 @@
+---
+- name: "Users | Ensure Account Existence"
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    uid: "{{ item.uid | default(omit) }}"
+    password: "{{ item.password | default(omit) }}"
+    shell: "{{ item.shell | default('/bin/bash') }}"
+    state: present
+    groups: wheel
+    append: true
+  loop: "{{ base_users }}"
+
+- name: "Users | Configure Sudoers Access"
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/{{ item.name }}"
+    content: "{{ item.name }} {{ item.sudo_options }}"
+    owner: root
+    group: root
+    mode: '0440'
+    validate: /usr/sbin/visudo -cf %s
+  loop: "{{ base_users }}"
+  when: item.sudo_options is defined
+
+- name: "Users | Deploy SSH Authorized Keys"
+  ansible.builtin.authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ item.authorized_keys | join('\n') }}"
+    state: present
+    exclusive: false
+  loop: "{{ base_users }}"
+  when: item.authorized_keys is defined

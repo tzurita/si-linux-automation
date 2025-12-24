@@ -1,0 +1,25 @@
+---
+- name: "Register System via RHEL Role (Vagrant Only)"
+  ansible.builtin.include_role:
+    name: redhat.rhel_system_roles.rhc
+  vars:
+    rhc_auth:
+      login:
+        username: "{{ rh_username }}"
+        password: "{{ rh_password }}"
+    rhc_insights:
+      state: present
+  when: is_vagrant_env | default(false)
+
+- name: "Setup EPEL Repository (Prerequisite for Agents)"
+  ansible.builtin.dnf:
+    name: "{{ epel_repo_url }}"
+    state: present
+    disable_gpg_check: true
+
+- name: Protect core RHEL packages from EPEL interference
+  ansible.builtin.lineinfile:
+    path: /etc/yum.repos.d/epel.repo
+    regexp: '^excludepkgs='
+    line: 'excludepkgs=openssh*,openssl*'
+    insertafter: '^\[epel\]'

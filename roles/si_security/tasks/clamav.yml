@@ -1,0 +1,72 @@
+---
+- name: "ClamAV | Deployment and Security Synchronization"
+  when: ansible_os_family == "RedHat"
+  block:
+    - name: "ClamAV | Synchronize RHEL core libraries before install"
+      ansible.builtin.dnf:
+        name:
+          - openssl
+          - openssh-server
+          - openssh-clients
+        state: latest
+        disablerepo: "epel*"
+      register: ssh_sync
+
+    - name: "ClamAV | Restart SSH to apply library changes"
+      ansible.builtin.systemd:
+        name: sshd
+        state: restarted
+      when: ssh_sync.changed
+
+- name: "ClamAV | Management Block"
+  block:
+    - name: "ClamAV | Ensure packages are present"
+      ansible.builtin.package:
+        name:
+          - clamav
+          - clamav-update
+          - clamav-scanner-systemd
+        state: present
+
+    - name: "ClamAV | Deploy scan.conf from template"
+      ansible.builtin.template:
+        src: scan.conf.j2
+        dest: "{{ clamav_scan_conf }}"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart clamd
+
+    - name: "ClamAV | Run freshclam"
+      ansible.builtin.command: freshclam
+      register: freshclam_result
+      changed_when: false
+      failed_when:
+        - freshclam_result.rc != 0
+        - freshclam_result.stderr is defined
+        - freshclam_result.stderr.find("locked by another process") == -1
+
+    - name: "ClamAV | Set SELinux booleans"
+      ansible.posix.seboolean:
+        name: "{{ item }}"
+        state: true
+        persistent: true
+      loop:
+        - antivirus_can_scan_system
+        - clamd_use_jit
+      register: sebool_result
+      failed_when:
+        - sebool_result.failed
+        - "'Boolean ' ~ item ~ ' is not defined' not in sebool_result.msg"
+
+    - name: "ClamAV | Ensure clamd is running"
+      ansible.builtin.systemd:
+        name: clamd@scan
+        state: started
+        enabled: true
+
+    - name: "ClamAV | Ensure freshclam is running"
+      ansible.builtin.systemd:
+        name: clamav-freshclam
+        state: started
+        enabled: true

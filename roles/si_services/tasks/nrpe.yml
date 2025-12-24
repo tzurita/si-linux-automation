@@ -1,0 +1,23 @@
+---
+- name: "NRPE | Include si.nrpe Role"
+  ansible.builtin.include_role:
+    name: si.nrpe
+  vars:
+    nrpe_server_dir: "{{ si_nrpe_server_dir }}"
+    nrpe_server_allowed_hosts: "{{ si_nrpe_server_allowed_hosts }}"
+    nrpe_plugin_packages: "{{ si_nrpe_plugin_packages }}"
+    nrpe_command: "{{ si_nrpe_command }}"
+    nrpe_commands_default: {}
+
+- name: "NRPE | CLEANUP: Remove redundant allowed_hosts"
+  ansible.builtin.lineinfile:
+    path: /etc/nagios/nrpe.cfg
+    regexp: '^allowed_hosts='
+    state: absent
+
+- name: "NRPE | CLEANUP: Remove redundant commands"
+  ansible.builtin.lineinfile:
+    path: /etc/nagios/nrpe.cfg
+    regexp: '^command\[check_.*\]'
+    state: absent
+  notify: restart nrpe service

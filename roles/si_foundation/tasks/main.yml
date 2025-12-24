@@ -1,0 +1,12 @@
+---
+- name: "Foundation | Repositories and Registration"
+  ansible.builtin.include_tasks: repos.yml
+  tags: [foundation, registration, epel]
+
+- name: "Foundation | Base Packages"
+  ansible.builtin.include_tasks: packages.yml
+  tags: [foundation, packages]
+
+- name: "Foundation | Time Configuration"
+  ansible.builtin.include_tasks: time.yml
+  tags: [foundation, time]

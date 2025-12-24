@@ -1,0 +1,65 @@
+---
+- name: Fail2Ban | Management Block
+  when:
+    - ansible_facts.os_family == "RedHat"
+    - ansible_facts.distribution_major_version | int >= 8
+  block:
+    - name: Fail2Ban | Ensure packages are present
+      ansible.builtin.package:
+        name:
+          - fail2ban
+          - fail2ban-firewalld
+          - fail2ban-selinux
+          - firewalld
+        state: present
+
+    - name: Fail2Ban | Ensure firewalld is enabled and running
+      ansible.builtin.systemd:
+        name: firewalld
+        state: started
+        enabled: true
+
+    - name: Fail2Ban | Build ini_file loop list
+      ansible.builtin.set_fact:
+        fail2ban_jail_list: "{{ fail2ban_jail_list | default([]) + _items }}"
+      vars:
+        _items: >-
+          {{
+            (fail2ban_jails_config[item] | dict2items(key_name='option', value_name='value'))
+            | map('combine', {'section': item})
+            | list
+          }}
+      loop: "{{ fail2ban_jails_config.keys() | list }}"
+      loop_control:
+        loop_var: item
+        label: "{{ item }}"
+
+    - name: Fail2Ban | Configure jail.local
+      community.general.ini_file:
+        path: /etc/fail2ban/jail.local
+        section: "{{ item.section }}"
+        option: "{{ item.option }}"
+        value: "{{ item.value | string }}"
+        no_extra_spaces: true
+        owner: root
+        group: root
+        mode: "0640"
+      loop: "{{ fail2ban_jail_list }}"
+      loop_control:
+        label: "{{ item.section }}: {{ item.option }}"
+      notify: Restart fail2ban
+
+    - name: Fail2Ban | Ensure service is started
+      ansible.builtin.systemd:
+        name: fail2ban
+        state: started
+        enabled: true
+
+    - name: Fail2Ban | Verify sshd jail is active
+      ansible.builtin.command: fail2ban-client status sshd
+      register: sshd_status
+      changed_when: false
+      retries: 5
+      delay: 5
+      until: sshd_status.rc == 0
+
