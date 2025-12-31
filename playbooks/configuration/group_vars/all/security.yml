@@ -1,0 +1,166 @@
+---
+# ----------------------------------------------------------------
+# Phase 5: Service Variables
+# ----------------------------------------------------------------
+
+# ----------------------------------------------------------------
+# SPLUNKUF: Configuration
+# ----------------------------------------------------------------
+# 1. Identity & Paths
+splunk_home: "/opt/splunkforwarder"
+splunk_nix_home: "/opt/splunkforwarder"
+splunk_install_path: "/opt"
+splunk_nix_user: "splunk"
+splunk_nix_group: "splunk"
+splunk_nix_uid: 5003
+splunk_nix_gid: 5003
+
+# 2. Package & Official Download Logic
+splunk_install_type: "uf"
+splunk_package_version: "9.1.7"
+build_id: "e17104057ef0"
+
+# Set this to true to download once to your machine and push to RHEL servers (Saves bandwidth)
+# Set to false if you want each RHEL server to download directly from Splunk.com
+splunk_download_local: false
+
+# 3. First-Time Initialization
+splunk_user_seed: true
+splunk_admin_username: "admin"
+splunk_admin_password: "blah"
+
+# 4. Deployment Server
+splunk_uri_ds: "si-splunk-sh01.si.edu:8089"
+logrotate_file: "/etc/logrotate.d/splunk"
+
+# 5. Logging Paths
+# custom_acl_paths:
+#   - "/var/log"
+#   - "/var/log/audit"
+
+# Native Role App Injection: This replaces your manual etc/apps tasks
+splunk_install_apps:
+  - name: OCIO_all_sites_deploymentclient
+    dest: "{{ splunk_home }}/etc/apps/OCIO_all_sites_deploymentclient"
+    config:
+      - name: default/deploymentclient.conf
+        content: |
+          [target-broker:deploymentServer]
+          targetUri = {{ splunk_uri_ds }}
+
+# Paths that Splunk needs permission to read
+splunk_monitored_paths:
+  - /var/log/audit
+  - /var/log/secure
+  - /var/log/messages
+  - /var/log/cron
+  - /var/log/maillog
+
+# ----------------------------------------------------------------
+# AUDITD: Configuration
+# ----------------------------------------------------------------
+
+# File Paths
+local_file_path: "../../files/auditd-attack.rules"
+remote_file_path: /etc/audit/rules.d/auditd-attack.rules
+
+# Ownership and Permissions
+remote_owner: root
+remote_group: root
+file_mode: '0600'
+dir_mode: '0750'
+
+# Hardening Settings (Data separated from Logic)
+auditd_conf_settings:
+  - { key: 'max_log_file_action', value: 'ROTATE' }
+  - { key: 'space_left_action', value: 'SYSLOG' }
+  - { key: 'admin_space_left_action', value: 'SUSPEND' }
+  - { key: 'disk_full_action', value: 'SUSPEND' }
+  - { key: 'disk_error_action', value: 'SUSPEND' }
+  - { key: 'overflow_action', value: 'SYSLOG' }
+
+# ================================================================
+# FAIL2BAN GLOBAL SETTINGS
+# ================================================================
+# Global Settings
+fail2ban_loglevel: "INFO"
+fail2ban_logtarget: "/var/log/fail2ban.log"
+fail2ban_sender: "root@{{ ansible_fqdn }}"
+fail2ban_destemail: "root@localhost,unixsupp@si.edu"
+
+# Whitelisted IPs
+fail2ban_ignoreips:
+  - 127.0.0.1/8
+  - "::1"
+  - 160.111.103.158/32
+  - 160.111.103.159/32
+  - 160.111.103.160/32
+  - 160.111.103.200/32
+  - 160.111.103.202/32
+  - 160.111.103.203/32
+  - 160.111.103.223/32
+  - 160.111.103.224/32
+  - 160.111.252.12/32
+  - 172.22.15.46/32
+
+# Jail Configuration – Clean and readable
+fail2ban_jails_config:
+  DEFAULT:
+    loglevel: "{{ fail2ban_loglevel }}"
+    logtarget: "{{ fail2ban_logtarget }}"
+    ignoreip: "{{ fail2ban_ignoreips | join(' ') }}"
+    destemail: "{{ fail2ban_destemail }}"
+    sender: "{{ fail2ban_sender }}"
+    bantime: "-1"
+    backend: "systemd"
+    banaction: "firewallcmd-rich-rules"
+    banaction_allports: "firewallcmd-rich-rules"
+
+  sshd:
+    enabled: "true"
+    maxretry: "8"
+    findtime: "1d"
+
+# ================================================================
+# CLAMAV SETTINGS (si.clamav) - RHEL 8/9/10 Optimized
+# ================================================================
+# The values express intent, not implementation.
+#
+# Interpretation rules:
+#   false  -> directive must NOT exist
+#   string -> enforce single "Key value" line
+#   list   -> enforce multiple "Key value" lines
+clamav_scan_conf: "/etc/clamd.d/scan.conf"
+
+clamav_scan_settings:
+  # Remove the Example line that causes warnings
+  Example: false
+
+  # Socket configuration
+  LocalSocket: "/run/clamd.scan/clamd.sock"
+  LocalSocketGroup: "clamscan"
+  LocalSocketMode: "666"
+
+  # Performance & limits
+  MaxDirectoryRecursion: "20"
+  MaxScanSize: "100M"
+  MaxFileSize: "25M"
+
+  # Logging
+  LogTime: "yes"
+
+  # Multiple exclusion paths
+  ExcludePath:
+    - "^/sys/"
+    - "^/proc/"
+    - "^/dev/"
+    - "^/run/"
+    - "^/tmp/systemd-private"
+    - "^/home/"
+    - "^/root/"
+
+# ================================================================
+# OPTIONAL: Generic cron controls
+# ================================================================
+si_clamav_cron_enabled: true
+si_clamav_cron_scan_paths: "/"

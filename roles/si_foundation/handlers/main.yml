@@ -1,0 +1,7 @@
+---
+# roles/si_foundation/handlers/main.yml
+
+- name: Restart dnf-automatic
+  ansible.builtin.service:
+    name: dnf-automatic.timer
+    state: restarted

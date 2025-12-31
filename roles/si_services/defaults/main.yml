@@ -1,0 +1,6 @@
+---
+# Sane defaults for NRPE variables
+si_nrpe_server_dir: "/etc/nagios/nrpe.d"
+si_nrpe_server_allowed_hosts: "127.0.0.1"
+si_nrpe_plugin_packages: []
+si_nrpe_command: {}

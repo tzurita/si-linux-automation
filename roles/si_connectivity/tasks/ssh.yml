@@ -1,0 +1,15 @@
+---
+- name: "SSH | Sanitize main sshd_config to remove legacy duplicates"
+  ansible.builtin.replace:
+    path: /etc/ssh/sshd_config
+    regexp: '^(?i)#?(PermitRootLogin|PasswordAuthentication).*\n'
+    replace: ''
+
+- name: "SSH | Verify config syntax after sanitization"
+  ansible.builtin.command: /usr/sbin/sshd -t
+  changed_when: false
+
+- name: "Configure SSHD via RHEL Role"
+  ansible.builtin.include_role:
+    name: redhat.rhel_system_roles.sshd
+    # when: not (is_test_container | default(false))

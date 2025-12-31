@@ -1,0 +1,45 @@
+---
+# ----------------------------------------------------------------
+# Phase 5: Service Variables
+# ----------------------------------------------------------------
+
+# ----------------------------------------------------------------
+# NAGIOS Role: Configuration
+# ----------------------------------------------------------------
+
+si_nrpe_server_dir: "/etc/nrpe.d"
+
+si_nrpe_server_allowed_hosts:
+  - '127.0.0.1'
+  - '10.3.223.100'
+  - '::1'
+
+si_nrpe_plugin_packages:
+  - nagios-plugins-nrpe
+  - nagios-plugins-load
+  - nagios-plugins-users
+  - nagios-plugins-disk
+  - nagios-plugins-procs
+
+si_nrpe_command:
+  check_users:
+    script: check_users
+    option: -w 5 -c 10
+
+  check_load:
+    script: check_load
+    option: -r -w .15,.10,.05 -c .30,.25,.20
+
+  check_disk:
+    script: check_disk
+    # Use a single line for the option string
+    option: >-
+      -w 20% -c 10% -A -i ".gvfs" -i /run/user -i /run/lxcfs -i /run/docker -i /var/lib/docker -i /var/lib/kubelet -i "/snap/*" -i /sys/kernel/debug/tracing
+
+  check_zombie_procs:
+    script: check_procs
+    option: -w 5 -c 10 -s Z
+
+  check_total_procs:
+    script: check_procs
+    option: -w 150 -c 200

@@ -1,0 +1,16 @@
+---
+# playbooks/configuration/baseline.yml
+- name: "Configuration | Smithsonian RHEL 9 Standard Baseline"
+  hosts: all
+  become: true
+
+  roles:
+    - { role: si_foundation,   tags: [foundation] }     # Phase 1
+    - { role: si_connectivity, tags: [connectivity] }   # Phase 2
+    - { role: si_services,     tags: [services] }       # Phase 3
+    - { role: si_security,     tags: [security] }       # Phase 4
+#    - { role: si_compliance,   tags: [compliance] }     # Phase ?
+    - { role: si_finalize,     tags: [finalize] }       # Phase 5
+
+  # Handlers are now tucked inside each role, but you can 
+  # still put "emergency" global handlers here if needed.

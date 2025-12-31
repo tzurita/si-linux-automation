@@ -1,0 +1,16 @@
+---
+profile: production
+# We want to check our internal roles
+exclude_paths:
+  - .cache/
+  - .github/
+  - collections/
+  - molecule/  # Don't lint the test configurations themselves
+  - test/
+
+# offline: true
+
+# Optional: Relax rules while you are migrating legacy code
+skip_list:
+  - no-changed-when
+  - command-instead-of-module

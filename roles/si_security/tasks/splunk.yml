@@ -1,0 +1,106 @@
+---
+# roles/si_security/tasks/splunk.yml
+
+- name: Splunk | Check if Splunk is already initialized
+  ansible.builtin.stat:
+    path: "/opt/splunkforwarder/etc/passwd"
+  register: splunk_passwd_file
+
+- name: Splunk | Installation Block
+  block:
+    - name: Put all hosts in the uf group
+      ansible.builtin.group_by:
+        key: "uf"
+
+    - name: Deploy Splunk UF from Official Source
+      ansible.builtin.include_role:
+        name: splunk.splunk
+      vars:
+        deployment_task: "check_splunk.yml"
+
+- name: Splunk | Create SI OCIO Deployment Client App
+  block:
+    - name: Ensure App directory exists
+      ansible.builtin.file:
+        path: "{{ splunk_home }}/etc/apps/OCIO_all_sites_deploymentclient/default"
+        state: directory
+        owner: "{{ splunk_nix_user }}"
+        group: "{{ splunk_nix_group }}"
+        mode: '0755'
+
+    - name: Write deploymentclient.conf
+      ansible.builtin.copy:
+        dest: "{{ splunk_home }}/etc/apps/OCIO_all_sites_deploymentclient/default/deploymentclient.conf"
+        content: |
+          [target-broker:deploymentServer]
+          targetUri = {{ splunk_uri_ds }}
+        owner: "{{ splunk_nix_user }}"
+        group: "{{ splunk_nix_group }}"
+        mode: '0644'
+      notify: Restart splunk
+
+- name: Splunk | Seed Admin Credentials
+  when: not splunk_passwd_file.stat.exists
+  block:
+    - name: Splunk | Generate random password
+      ansible.builtin.set_fact:
+        splunk_admin_pass: "{{ lookup('community.general.random_string', length=16, min_lower=2, min_upper=2, min_numeric=2, min_special=2) }}"
+
+    - name: Splunk | Generate SHA512 hash using openssl
+      ansible.builtin.shell: "openssl passwd -6 {{ splunk_admin_pass | quote }}"
+      register: openssl_hash
+      changed_when: false
+
+    - name: "Splunk | Create /opt/splunkforwarder/etc/passwd with SI formatting"
+      ansible.builtin.copy:
+        dest: "/opt/splunkforwarder/etc/passwd"
+        content: |
+          :admin:{{ openssl_hash.stdout }}::Administrator:admin:splunk@si.edu:::20131
+        owner: "{{ splunk_nix_user }}"
+        group: "{{ splunk_nix_group }}"
+        mode: '0600'
+      notify: Restart splunk
+
+- name: Splunk | Apply Smithsonian-specific Log ACLs
+  block:
+    - name: Set Access ACL (Works on both Files and Directories)
+      ansible.posix.acl:
+        path: "{{ item }}"
+        entity: "{{ splunk_nix_user }}"
+        etype: user
+        permissions: rx
+        state: present
+        recursive: true
+      loop: "{{ splunk_monitored_paths }}"
+
+    - name: Create Logrotate Persistence for Files
+      ansible.builtin.copy:
+        dest: /etc/logrotate.d/splunk_acls
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          /var/log/secure /var/log/messages /var/log/cron /var/log/maillog {
+              sharedscripts
+              postrotate
+                  /usr/bin/setfacl -m u:{{ splunk_nix_user }}:rx /var/log/secure /var/log/messages /var/log/cron /var/log/maillog
+              endscript
+          }
+
+- name: Splunk | Final SI Hardening and Cleanup
+  block:
+    - name: Ensure SPLUNK_HOME variable is set in launch config
+      ansible.builtin.lineinfile:
+        path: "{{ splunk_home }}/etc/splunk-launch.conf"
+        line: "SPLUNK_HOME={{ splunk_home }}"
+        create: true
+        owner: "{{ splunk_nix_user }}"
+        group: "{{ splunk_nix_group }}"
+        mode: '0644'
+
+    - name: Set SPLUNK_HOME directory permissions to 750
+      ansible.builtin.file:
+        path: "{{ splunk_home }}"
+        owner: "{{ splunk_nix_user }}"
+        group: "{{ splunk_nix_group }}"
+        mode: '0750'

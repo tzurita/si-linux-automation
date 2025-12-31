@@ -1,0 +1,16 @@
+---
+- name: "Security | Splunk Universal Forwarder"
+  ansible.builtin.include_tasks: splunk.yml
+  tags: [security, splunk]
+
+- name: "Security | Auditd Configuration"
+  ansible.builtin.include_tasks: auditd.yml
+  tags: [security, auditd]
+
+- name: "Security | Fail2Ban Hardening"
+  ansible.builtin.include_tasks: fail2ban.yml
+  tags: [security, fail2ban]
+
+- name: "Security | ClamAV Antivirus"
+  ansible.builtin.include_tasks: clamav.yml
+  tags: [security, clamav]

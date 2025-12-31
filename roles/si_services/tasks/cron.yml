@@ -1,0 +1,9 @@
+---
+- name: "Monthly reboot on second Tuesday"
+  ansible.builtin.cron:
+    name: "Monthly reboot on second Tuesday"
+    minute: "45"
+    hour: "4"
+    day: "8-14"
+    job: '[ $(date +\%a) = "Tue" ] && /sbin/shutdown -r now'
+    user: root
