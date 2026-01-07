@@ -1,0 +1,27 @@
+---
+# roles/si_foundation/tasks/main.yml
+- name: RHEL 8 Python Compatibility Setup
+  ansible.builtin.dnf:
+    name: python39
+    state: present
+  when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "8"
+  vars:
+    ansible_python_interpreter: /usr/libexec/platform-python
+  tags: [foundation, packages]
+
+- name: Set interpreter to 3.9 for RHEL 8 baseline modules
+  set_fact:
+    ansible_python_interpreter: /usr/bin/python3.9
+  when: ansible_distribution_major_version == "8"
+
+- name: "Foundation | Repositories and Registration"
+  ansible.builtin.include_tasks: repos.yml
+  tags: [foundation, registration, epel]
+
+- name: "Foundation | Base Packages"
+  ansible.builtin.include_tasks: packages.yml
+  tags: [foundation, packages]
+
+- name: "Foundation | Time Configuration"
+  ansible.builtin.include_tasks: time.yml
+  tags: [foundation, time]

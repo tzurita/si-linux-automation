@@ -1,0 +1,133 @@
+---
+# 1. GATHER FACTS ONCE AT THE TOP
+# This allows every block below to use 'ansible_facts.packages'
+- name: "Compliance | Gather environment facts"
+  ansible.builtin.package_facts:
+    manager: auto
+  tags: [always]
+
+# 2. USER INITIALIZATION FILES
+- name: "Compliance | User Initialization Files Security"
+  tags: [file_permission_user_init_files, cis, finalize]
+  block:
+    - name: "XCCDF Value var_user_initialization_files_regex"
+      set_fact:
+        var_user_initialization_files_regex: !!str ^\.[\w\- ]+$
+
+    - name: "Hardening | Gather User Info"
+      ansible.builtin.getent:
+        database: passwd
+
+    - name: "Hardening | Find Init Files for Interactive Users"
+      ansible.builtin.find:
+        paths: '{{ item.value[4] }}'
+        pattern: '{{ var_user_initialization_files_regex }}'
+        hidden: true
+        use_regex: true
+      with_dict: '{{ ansible_facts.getent_passwd }}'
+      when:
+        - item.value[4] != "/sbin/nologin"
+        - item.key not in ["nobody", "nfsnobody"]
+        - item.value[1] | int >= 1000
+      register: found_init_files
+
+    - name: "Hardening | Fix Init Files Permissions (Mode 0740 or less)"
+      ansible.builtin.file:
+        path: '{{ item.1.path }}'
+        mode: "u-s,g-wxs,o="
+      loop: "{{ q('ansible.builtin.subelements', found_init_files.results, 'files', {'skip_missing': True}) }}"
+      when: found_init_files is defined
+
+# 3. SYSTEM LOG PERMISSIONS
+- name: "Compliance | Ensure System Log Files Have Correct Permissions"
+  when:
+    - '"kernel" in ansible_facts.packages'
+    - '"rsyslog" in ansible_facts.packages'
+  tags: [rsyslog_files_permissions, cis, finalize]
+  block:
+    - name: Set rsyslog logfile configuration facts
+      ansible.builtin.set_fact:
+        rsyslog_etc_config: /etc/rsyslog.conf
+
+    - name: Get IncludeConfig directives (Legacy & Modern)
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep -e '$IncludeConfig' {{ rsyslog_etc_config }} | cut -d ' ' -f 2 || true
+        awk '/)/{f=0} /include\(/{f=1} f{ nf=gensub("^(include\\(|\\s*)file=\"(\\S+)\".*","\\2",1); if($0!=nf){ print nf }}' {{ rsyslog_etc_config }} || true
+      register: rsyslog_inc_discovery
+      changed_when: false
+
+    - name: List all config files
+      ansible.builtin.find:
+        paths: "{{ item | dirname }}"
+        patterns: "{{ item | basename }}"
+        hidden: false
+        follow: true
+      loop: "{{ rsyslog_inc_discovery.stdout_lines | list + [rsyslog_etc_config] }}"
+      register: rsyslog_config_files
+      failed_when: false
+      changed_when: false
+
+    - name: Extract and Fix Log File Permissions (Mode 0640)
+      ansible.builtin.shell: |
+        set -o pipefail
+        # Discover log paths from config results
+        LOGS=$(grep -oP '^[^(\s|#|\$)]+[\s]+.*[\s]+-?(/+[^:;\s]+);*\.*$' {{ item.1.path }} | awk '{print $NF}' | sed -e 's/^-//')
+        LOGS="$LOGS $(grep -ozP "action\s*\(\s*type\s*=\s*\"omfile\"[^\)]*\)" {{ item.1.path }} | grep -iaoP "\bFile\s*=\s*\"([/[:alnum:][:punct:]]*)\"\s*\)" | grep -oE "\"([/[:alnum:][:punct:]]*)\"" | tr -d "\"")"
+       
+        for LOG in $LOGS; do
+          if [ -f "$LOG" ]; then chmod 0640 "$LOG"; fi
+        done
+      loop: "{{ rsyslog_config_files.results | default([]) | subelements('files') }}"
+      changed_when: false
+      failed_when: false
+
+# 4. DISABLE JOURNAL REMOTE
+- name: "Compliance | Disable systemd-journal-remote Socket"
+  when: '"kernel" in ansible_facts.packages'
+  tags: [socket_systemd-journal-remote_disabled, cis, finalize]
+  block:
+    - name: Collect systemd Socket Units
+      ansible.builtin.command:
+        cmd: systemctl -q list-unit-files --type socket
+      register: result_systemd_unit_files
+      changed_when: false
+
+    - name: Ensure systemd-journal-remote.socket is Masked
+      ansible.builtin.systemd:
+        name: systemd-journal-remote.socket
+        state: stopped
+        enabled: false
+        masked: true
+      when:
+        - result_systemd_unit_files.stdout_lines is search("systemd-journal-remote.socket")
+
+- name: "Compliance | World-Writable Remediation with Audit"
+  become: true
+  tags: [world_writable, cis, finalize]
+  block:
+    - name: "Hardening | Find, Fix, and Report World-Writable Files"
+      ansible.builtin.shell: |
+        set -o pipefail
+        # 1. Identify local partitions
+        FILTER_NODEV=$(awk '/nodev/ { print $2 }' /proc/filesystems | paste -sd,)
+        PARTITIONS=$(findmnt -n -l -k -it $FILTER_NODEV | awk '{ print $1 }' | grep -v "/sysroot")
+       
+        # 2. Find and fix while printing the filenames
+        # Using -print allows us to see what was found before chmod runs
+        for PART in $PARTITIONS; do
+          find "$PART" -xdev -type f -perm -002 -print -exec chmod o-w {} + 2>/dev/null
+        done
+
+        # 3. Handle /tmp specifically
+        if grep -q "^tmpfs /tmp" /proc/mounts; then
+          find /tmp -xdev -type f -perm -002 -print -exec chmod o-w {} + 2>/dev/null
+        fi
+      register: ww_changed_files
+      changed_when: ww_changed_files.stdout != ""
+      failed_when: ww_changed_files.rc != 0
+
+    - name: "Test | Display Changed Files"
+      ansible.builtin.debug:
+        var: ww_changed_files.stdout_lines
+      when: ww_changed_files.stdout != ""

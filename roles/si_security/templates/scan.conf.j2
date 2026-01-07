@@ -1,0 +1,20 @@
+# roles/si_security/templates/scan.conf.j2
+# Managed by Ansible - SI Security Policy
+# ----------------------------------------------------------------
+
+{% for key, value in clamav_scan_settings.items() %}
+{# Interpretation: false -> directive must NOT exist #}
+{% if value is sameas false %}
+# {{ key }} is disabled by policy
+
+{# Interpretation: list -> enforce multiple "Key value" lines #}
+{% elif value is iterable and value is not string %}
+{% for item in value %}
+{{ key }} {{ item }}
+{% endfor %}
+
+{# Interpretation: string/number -> enforce single "Key value" line #}
+{% else %}
+{{ key }} {{ value }}
+{% endif %}
+{% endfor %}

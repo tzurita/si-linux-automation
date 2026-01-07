@@ -1,0 +1,12 @@
+---
+- name: "Finalize | OS User Accounts"
+  ansible.builtin.include_tasks: users.yml
+  tags: [finalize, users]
+
+- name: "Finalize | Developer Environment (Dotfiles & Rust)"
+  ansible.builtin.include_tasks: environment.yml
+  tags: [finalize, dotfiles]
+
+- name: "Finalize | CIS Fixes"
+  ansible.builtin.include_tasks: cisscan.yml
+  tags: [finalize, cis]

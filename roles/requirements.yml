@@ -1,0 +1,8 @@
+---
+roles:
+  - name: si.nrpe
+    src: git@github.com:tzurita/si-ansible-role-nrpe.git
+    scm: git
+  - name: splunk.splunk
+    src: https://github.com/splunk/ansible-role-for-splunk
+    version: master

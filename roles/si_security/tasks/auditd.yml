@@ -1,0 +1,44 @@
+---
+- name: Auditd | Management Block
+  when:
+    - ansible_distribution == "RedHat"
+    - ansible_distribution_major_version | int >= 8
+  block:
+    - name: Ensure destination directory exists
+      ansible.builtin.file:
+        path: "{{ remote_file_path | dirname }}"
+        state: directory
+        mode: "{{ dir_mode }}"
+        owner: "{{ remote_owner }}"
+        group: "{{ remote_group }}"
+
+    - name: Copy audit rules
+      ansible.builtin.copy:
+        src: auditd-attack.rules
+        dest: "{{ remote_file_path }}"
+        mode: "{{ file_mode }}"
+        owner: "{{ remote_owner }}"
+        group: "{{ remote_group }}"
+        backup: true
+      notify: Reload Audit Rules
+
+    - name: Validate audit rules syntax
+      ansible.builtin.command: /sbin/augenrules --check
+      changed_when: false
+      check_mode: false
+
+    - name: Apply auditd.conf hardening
+      ansible.builtin.lineinfile:
+        path: /etc/audit/auditd.conf
+        regexp: '^#?\s*{{ item.key }}\s*='
+        line: "{{ item.key }} = {{ item.value }}"
+        state: present
+        backup: true
+      loop: "{{ auditd_conf_settings }}"
+      notify: Restart Auditd Service
+
+    - name: Ensure Auditd service is enabled and running
+      ansible.builtin.service:
+        name: auditd
+        state: started
+        enabled: true

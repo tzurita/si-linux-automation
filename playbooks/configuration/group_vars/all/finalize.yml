@@ -1,0 +1,91 @@
+---
+# ----------------------------------------------------------------
+# Phase 7: Finalize
+# ----------------------------------------------------------------
+
+# ----------------------------------------------------------------
+# USERS: Configuration
+# ----------------------------------------------------------------
+base_users:
+  # Tom Zurita
+  - name: zuritat
+    uid: 2000
+    shell: "/bin/zsh"
+    password: "$6$rounds=656000$nL318Vf4WytWNccz$g25AkwmmVBFkoWecNF4/wSv4dmFCLjwnhGbPmkQ/yim.FtMF1IBLeLji/ZN6N1sl4YmO19FAPBtF83BGrL1FU."
+    sudo_options: "ALL=(ALL) NOPASSWD: ALL"
+    authorized_keys:
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCmpGrTJCEDguctptijJB1w7KZX5g4yll9hV9KpwIaalf7Ln1qD9zOf2QYvMlNWYsFmoyGjH5rUxUWn9DTQp/N6yi9VRJmUIhPwDUWx5o7xLK4r1ev0V3Rpsn5gOBIiuqK+MMVWdDcwDw02ZNgS0J2Bzcg8pLfTUyOl6VoUoqFw1GPRFF10pVaW/IoOLPHunJ7I0pgjuWZllqi0k4rn4YZo66CUbOY8VP3afnIwv/CWkdx2K6Yk9evISZ2vbYc599hsi8CJOqXPsCId/ARcP4X+vqbMEVSPtKFp2ZiRqbiVeOB65szgGeWSmCB3/YYLa02FXqIn5AbUa6yefUf4jrd7KKfn+FxgG/4mPXbtAawoJW6Bqp5DLQujt0qCxa0RF7iAKzBz6NtfKqWG2QMPQzJWs6g3lq3MPvb2njQ1ECsv4BEs1InSAmHBkR+gIH3FEWbhcU34KBkdydHHGiKn4PMajlbStUpU/wGCQGLc+zsd0W8etvV9SzkPNu+PBN0fXvTo5l7whId5LHcLPVKH7g1aGl7KCjdjq5B/KGcHz7tuAhcb4wQ0BDLukTC+sQWfRWiAVf3gjEKj7KBrNiC85fB9a3gHY0LTn4E8hMu1lrAJJI5SfqCXokMsxG6geetB8asPj3usCq32JqyKZy68J1yhua/Ma4TIAGLU8VsBpI4gAQ== zuritat@si-satellite.si.edu"
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDmg7AV+bEuKG4N5SAZKg/hEM39UySwAQ6CDIzV8iQ5Y5N13VZ2y3732tUHbheGiFX/VAJrAQuKM6+qo5ZPhPjrO84CSdGO2QeELZLkTiSV1B7euO1vDvM8nrVSCaD6M0DtCpSbr9vd4FUwiSio4A1R+bXtsRhTN4EKp2PsDtTkjwpNMFwDpoQ6/no9kUodKwBrYslTiYcWEzDHGcJ5190TT6z14jx96eFxTDrhiQU6jdZI/fiQahojGfNMvLRf2nTYAW28v0J9FNLp2NmEsBw1Dpqo4+2RBy34Wt0GBRoEsZ8mXEUGGdDoi5PDXjR2hkA/oA1s+ZoHKKPCZaM/nmBL foreman-proxy@si-satellite.si.edu"
+
+  # Mandy Hargis
+  - name: mmh
+    uid: 2001
+    password: "$6$rounds=656000$nL318Vf4WytWNccz$g25AkwmmVBFkoWecNF4/wSv4dmFCLjwnhGbPmkQ/yim.FtMF1IBLeLji/ZN6N1sl4YmO19FAPBtF83BGrL1FU."
+    sudo_options: "ALL=(ALL) NOPASSWD: ALL"
+    authorized_keys:
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAIEAmHrXiq25FGmp6xY5UoVZ7eL/IDxLhFVtao30gXefDktpiWjqzqIwDoDBf5bHNupYBWrb1WMTjjHZE1Q3/+7L1sjxC47FDRlicptngzMmyJupynxVVr0zndH7GLt2FXQVoVr3wqVRSMtXzH0l6gd8zu8p9cx3fBGgp4GUVMIzmg8= desk_mmh_ssh"
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA9QMW17p4sUX8e/PRi+1G+WFmMsSJy6YZRkbV1I+B8MMyJHQciDwYKlUcLC5Psc3GOBc0WtqoO0h1UyMkv2MT9gq33GLsWI4V5hTaTQY3kQ1MNk/MiXyHlcW89AVvv0U66w+bHTNKa/8Rgzxw0FT+KHpDblMpFJgcoFi0L0SAyI7C4MUSmYzQ0gfdUpAVGNjuE5GC7wOGqfsLplnd34zaVq7qkbVwyvMNwp6w6Lcq4YK0vSflbxVeOWSvucaBw2I0KTxFweQELF5amwppmY8USPNVGzXE2OUp8V4OhB0VO9aTx2OwHYzeu0KyMqKDbvVLSCJJ34CtOg5I05ZTv8jHnQ== sat_mmh_ssh"
+
+  # AAP - Ansible Automation Platform Service Account
+  - name: aap
+    uid: 2010
+    password: "$6$rounds=656000$nL318Vf4WytWNccz$g25AkwmmVBFkoWecNF4/wSv4dmFCLjwnhGbPmkQ/yim.FtMF1IBLeLji/ZN6N1sl4YmO19FAPBtF83BGrL1FU."
+    sudo_options: "ALL=(ALL) NOPASSWD: ALL"
+    authorized_keys:
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCnqDVUQLCu5bMcaLed28j9+tY9daG5PEbeAHSRe6UhvssHi8nGZ+ZbfAaqxpFBXwc4c/eXPdNrq/xZec35nufDcjPucD6AgXCQHgPmO+mbKbiCsAqopbPMXRcuY3LlBwoOUfr5T7KR+YOPyqoTmgj6za5rxsTCO3RIIexhya9pWEtnrbbC9rJcibDe6dyn/AzN5baNCyfdc4JcH1lLCRyMMVOUOIh2ExpeOQoE312urjwH42AVYf/DL6gJ3Rptnnd6GzxtHQH/vGYcQMnEiatFMDMONFwdHApIvlBx/jbHXil3xalgewSmN4rHrDvp0I5UJJU4CMGjJ40YOB5emBS/eEwE3MsQ1Ms9WumxsLsg5Kaqcl86MA795N2Btd5reRbt91NRzrzgRzZa231r4FIket4DO7jl/vs1ZhgnE/dl3Pw/gWuWiS3IPkvYJZiUv4YvUQRoyxyT9+pGVop/AcMqlTbJDdlwNGtJbjV82psZ77y6IFbkWLixeqj4mREQ67IHAGvt4I7mFJriJn5BuFpjzKA2yI3qEsesEEjjCCbDihGaC6TDsn381HGIEVoeaLqP9nfBnKmk4dQ3Au1pU6DtdAqKdydSjg8IFPY+w4lxIN/Mk/m/BG/sY/22RkSQmWtsNhSooiFzariDS7N7MzCs7y28KGpyrMVO1ZmudMS/pQ== aap@service-account"
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC+0Qrut0LjL4slqM+NhdNQHFT0YjhrVr4LNfnm3qt6Ovm8lZKoDhHlvwUNg3fK0cjATDKZ9K61m2oGrnPZs0k78Qesh/fGNvGewY9w2leYZZJyitOlg0RJDrGSwWbNwSWyWnLxJIT0DaKap758ucy9/eqJZN7D9bcU8Qdo7yzoUsSE6OtJdNGR9HUM/lk2Jl4bFemNK31YijILWe+kE9yq8h2KSaLuhu4v3/+D9eAUrYsiGIjHLPkvKvH1hj/I2mg86nXWgPUid/rNwMNINv3NNENfllyuGnVL5rOZME1zUE2slzjFWI6LU0mzRZYI0KaBYZjLGnbJ15H18hJPMaRsoSJQNEFIWOemunlu0voo0yNlmElb/bSIVfNDxp3PNsuxfgfIVR9Yvhec1yrfBhLrjybRs2obDCjoXCikwkGCZev4Z+Bk3T3T7H2TE61aeUArR9FBRwBnEh3CoiKbHnq3xX/DfcARpdbNGB5YdU3hkPduhjyWRgXLpHkbGl3VA4c= foreman-proxy@si-satellite.si.edu"
+
+  # Service Now
+  - name: disco
+    uid: 2003
+    password: "$6$0pC159drEPTcomlE$2M8SmtbjlmiVTCyPjaI3R5MtQ1IEcv.xXNHB6qq6F5Bis8omG5dcCHVV8T//pZfurO.QAZcu781HEI.y9tnNP1"
+    sudo_options: "ALL=(ALL) ALL"
+
+  # SocVulnscan
+  - name: socvulnscan
+    uid: 2004
+    password: "$6$rounds=656000$lZVVclqMl.KwmkuW$TSmVtLE2L/iEb7cqhcbZ7eqfFrJb2w9uL9svifmGTYCYcWBOz2jB8dNOgaxSl5bmXufvUnC3zmKookk9XA28n1"
+    sudo_options: "ALL=(ALL) ALL"
+
+  # Root
+  - name: root
+    password: "$6$dylf/aO439bHDQEe$/dsIQf7wIlDaj/GGId/WWcRYCBpTSCfRDhf8SH2zT80EGBCu15IV314xS/6ykBCW7UFEFv9ngMWo7agWjBx0e1"
+
+# ----------------------------------------------------------------
+# Dotfiles Repository Configuration
+# ----------------------------------------------------------------
+dotfiles_repo: "https://github.com/tzurita/si-dotfiles.git"
+dotfiles_repo_version: "master"
+dotfiles_repo_local_destination: "{{ dotfiles_home }}/.dotfilesgit"
+dotfiles_home: "/home/zuritat"
+
+# ----------------------------------------------------------------
+# XDG Base Directory Specification
+# ----------------------------------------------------------------
+# Note: No $ signs, and we use the dotfiles_home variable
+xdg_config_home: "{{ dotfiles_home }}/.config"
+xdg_data_home: "{{ dotfiles_home }}/.local/share"
+xdg_cache_home: "{{ dotfiles_home }}/.cache"
+xdg_state_home: "{{ dotfiles_home }}/.local/state"
+xdg_bin_home: "{{ dotfiles_home }}/.local/bin"
+
+# ----------------------------------------------------------------
+# Application Redirections (The "Legacy Cleanup")
+# ----------------------------------------------------------------
+# These ensure that even during installation, tools stay in XDG
+cargo_home: "{{ xdg_data_home }}/cargo"
+zsh_dir: "{{ xdg_data_home }}/oh-my-zsh"
+ansible_home: "{{ xdg_data_home }}/ansible"
+go_path: "{{ xdg_data_home }}/go"
+android_home: "{{ xdg_config_home }}/android"
+gnupg_home: "{{ xdg_data_home }}/gnupg"
+pass_dir: "{{ xdg_data_home }}/password-store"
+remote_exec_dir: "/var/lib/foreman-remotework"
+
+# ----------------------------------------------------------------
+# Zsh Configuration
+# ----------------------------------------------------------------
+zsh_plugins:
+  - { name: 'zsh-autosuggestions', repo: 'https://github.com/zsh-users/zsh-autosuggestions' }
+  - { name: 'zsh-syntax-highlighting', repo: 'https://github.com/zsh-users/zsh-syntax-highlighting' }
+  - { name: 'fast-syntax-highlighting', repo: 'https://github.com/zdharma-continuum/fast-syntax-highlighting' }

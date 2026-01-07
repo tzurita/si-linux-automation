@@ -1,0 +1,28 @@
+# tasks/dnf_automatic.yml
+- name: Install dnf-automatic
+  ansible.builtin.dnf:
+    name: dnf-automatic
+    state: present
+
+- name: Configure dnf-automatic settings
+  community.general.ini_file:
+    path: /etc/dnf/automatic.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    mode: '0644'
+  loop:
+    - { section: 'commands', option: 'upgrade_type', value: "{{ dnf_automatic_upgrade_type }}" }
+    - { section: 'commands', option: 'download_updates', value: "{{ dnf_automatic_download_updates }}" }
+    - { section: 'commands', option: 'apply_updates', value: "{{ dnf_automatic_apply_updates }}" }
+    - { section: 'emitters', option: 'emit_via', value: "{{ dnf_automatic_emit_via }}" }
+    - { section: 'email', option: 'email_from', value: "{{ dnf_automatic_email_from }}" }
+    - { section: 'email', option: 'email_to', value: "{{ dnf_automatic_email_to }}" }
+    - { section: 'email', option: 'email_host', value: "{{ dnf_automatic_email_host }}" }
+  notify: Restart dnf-automatic
+
+- name: Ensure dnf-automatic timer is enabled
+  ansible.builtin.service:
+    name: dnf-automatic.timer
+    state: started
+    enabled: true

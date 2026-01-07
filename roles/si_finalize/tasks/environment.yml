@@ -1,0 +1,115 @@
+---
+- name: "Env | Master Developer Environment Block"
+  tags: [finalize, dotfiles]
+  block:
+    # --- 1. PREPARATION (Root Privileges) ---
+    - name: "rsync | Install (Temporary)"
+      ansible.builtin.dnf:
+        name: rsync
+        state: present
+      become: true
+
+    # --- 2. DOTFILES (User Privileges) ---
+    - name: "Setup | Process Dotfiles"
+      become: true
+      become_user: zuritat
+      block:
+        - name: "Dotfiles | Ensure repository is cloned to staging"
+          ansible.builtin.git:
+            repo: "{{ dotfiles_repo }}"
+            dest: "{{ dotfiles_repo_local_destination }}"
+            version: "{{ dotfiles_repo_version | default('master') }}"
+            accept_hostkey: true
+            force: true
+
+        - name: "Dotfiles | Sync staging to Home"
+          ansible.posix.synchronize:
+            # The trailing slash on 'src' is what prevents .config/.config
+            src: "{{ dotfiles_repo_local_destination }}/"
+            dest: "{{ dotfiles_home }}/"
+            recursive: true
+            delete: false
+            rsync_opts:
+              - "--exclude=.git"
+          delegate_to: "{{ inventory_hostname }}"
+
+        - name: "Dotfiles | Cleanup staging directory"
+          ansible.builtin.file:
+            path: "{{ dotfiles_repo_local_destination }}"
+            state: absent
+
+    # --- 3. XDG & ZSH (User Privileges) ---
+    - name: "Setup | XDG and Oh My Zsh"
+      become: true
+      become_user: zuritat
+      block:
+        - name: "Zsh | Ensure XDG and Application directories exist"
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: directory
+            owner: zuritat
+            group: zuritat
+            mode: '0755'
+          loop:
+            - "{{ xdg_data_home }}"
+            - "{{ xdg_state_home }}/zsh"
+            - "{{ xdg_bin_home }}"
+            - "{{ zsh_dir }}"
+            - "{{ cargo_home }}"
+
+        - name: "Zsh | Install Oh My Zsh Framework"
+          ansible.builtin.git:
+            repo: "https://github.com/ohmyzsh/ohmyzsh.git"
+            dest: "{{ zsh_dir }}"
+            depth: 1
+            version: master
+
+        - name: "Zsh | Install Plugins from Variables"
+          ansible.builtin.git:
+            repo: "{{ item.repo }}"
+            dest: "{{ zsh_dir }}/custom/plugins/{{ item.name }}"
+            version: master
+            depth: 1
+          loop: "{{ zsh_plugins }}"
+
+    # --- 4. RUST & TOOLS (User Privileges) ---
+    - name: "Setup | Rust & Tools"
+      become: true
+      become_user: zuritat
+      block:
+        - name: "Tools | Download Oh My Posh install script"
+          ansible.builtin.get_url:
+            url: https://ohmyposh.dev/install.sh
+            dest: "{{ remote_exec_dir }}/install_ohmyposh.sh"
+            mode: '0700'
+
+        - name: "Tools | Run Oh My Posh installer"
+          ansible.builtin.command:
+            cmd: "{{ remote_exec_dir }}/install_ohmyposh.sh -d {{ xdg_bin_home }}"
+            creates: "{{ xdg_bin_home }}/oh-my-posh"
+
+        - name: "Tools | Download eza binary archive"
+          ansible.builtin.get_url:
+            url: "https://github.com/eza-community/eza/releases/latest/download/eza_x86_64-unknown-linux-gnu.tar.gz"
+            dest: "/tmp/eza.tar.gz"
+            mode: '0644'
+
+        - name: "Tools | Extract eza binary to local bin"
+          ansible.builtin.unarchive:
+            src: "/tmp/eza.tar.gz"
+            dest: "{{ xdg_bin_home }}"
+            remote_src: true
+            creates: "{{ xdg_bin_home }}/eza"
+
+        - name: "Tools | Ensure eza has execution permissions"
+          ansible.builtin.file:
+            path: "{{ xdg_bin_home }}/eza"
+            mode: '0755'
+
+  always:
+    # --- 5. CLEANUP (Root Privileges) ---
+    - name: "rsync | Remove (Cleanup)"
+      ansible.builtin.dnf:
+        name: rsync
+        state: absent
+      become: true

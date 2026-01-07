@@ -1,0 +1,14 @@
+---
+- name: "Ensure base packages are present"
+  ansible.builtin.package:
+    name: "{{ base_packages | default([]) }}"
+    state: present
+
+- name: "Ensure glances is installed"
+  ansible.builtin.package:
+    name: glances
+    state: present
+    # when: not (is_test_container | default(false))
+
+- name: "Configure DNF Automatic"
+  ansible.builtin.include_tasks: dnf_automatic.yml

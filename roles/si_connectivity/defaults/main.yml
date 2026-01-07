@@ -1,0 +1,10 @@
+---
+# SSH Hardening defaults
+connectivity_ssh_port: 22
+connectivity_permit_root_login: "no"
+connectivity_password_authentication: "no"
+
+# Firewall zones
+connectivity_firewall_zone: public
+connectivity_allowed_services:
+  - ssh

@@ -1,0 +1,71 @@
+# ==========================================
+# Ansible & Navigator Artifacts
+# ==========================================
+*.retry
+*.log
+ansible-navigator.log
+ansible-navigator.v1
+artifact.json
+.cache/
+.fact_cache/
+*.ansible.cfg.*
+*.inventory.*
+
+# ==========================================
+# Vagrant & Virtualization
+# ==========================================
+.vagrant/
+*.box
+secrets.yml
+Vagrantfile.local
+
+# ==========================================
+# Secrets & Private Data (CRITICAL - NEVER COMMIT)
+# ==========================================
+.vault_pass
+*.vault
+.env
+inventory/
+*.key
+*.pem
+collections/ansible_collections
+roles/si.nrpe
+roles/splunk.splunk
+
+# ==========================================
+# Molecule & Testing
+# ==========================================
+.molecule/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ==========================================
+# Python & Virtual Environments
+# ==========================================
+__pycache__/
+*.pyc
+*.pyo
+.python-version
+.venv/
+venv/
+env/
+
+# ==========================================
+# IDE / Editor Files (Linux & Cross-Platform)
+# ==========================================
+.vscode/
+.idea/
+*~
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# Archives & Exports
+# ==========================================
+*.zip
+*.tar.gz
+*.7z

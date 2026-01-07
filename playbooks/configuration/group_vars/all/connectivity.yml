@@ -1,0 +1,107 @@
+---
+# ----------------------------------------------------------------
+# Phase 3: Connectivity Variables
+# ----------------------------------------------------------------
+
+# ----------------------------------------------------------------
+# RHEL System Role: Firewall Configuration
+# ----------------------------------------------------------------
+
+# 1. Define the state of the service itself
+# (The role handles installation automatically, no need for extra vars)
+firewall_service_state: started
+firewall_service_enabled: true
+
+# 2. Define the rules (This is the specific variable the role looks for)
+firewall:
+  # Open Nagios (NRPE) Port
+  - port: "5666/tcp"
+    state: enabled
+    permanent: true
+
+# ----------------------------------------------------------------
+# RHEL System Role: SSHD Configuration
+# ----------------------------------------------------------------
+sshd_skip_defaults: true
+sshd_sysconfig_override_crypto_policy: true # CRITICAL: Ensures custom ciphers/MACs are applied on RHEL 8/9.
+sshd_manage_service: "{{ not (is_test_container | default(false)) }}"
+
+sshd_config:
+  # Basic Access Controls
+  UseDNS: false
+  GSSAPIAuthentication: false
+  PermitRootLogin: false
+  PasswordAuthentication: false
+  KbdInteractiveAuthentication: true
+
+  # CRYPTOGRAPHY SETTINGS
+  KexAlgorithms:
+    - diffie-hellman-group-exchange-sha256
+
+  Ciphers: "{{
+    [
+      'aes256-ctr',
+      'aes192-ctr',
+      'aes128-ctr'
+    ] | join(',') }}"
+
+  MACs: "{{
+    [
+      'hmac-sha2-512-etm@openssh.com',
+      'hmac-sha2-256-etm@openssh.com',
+      'hmac-sha2-512',
+      'hmac-sha2-256'
+    ] | join(',') }}"
+
+# ----------------------------------------------------------------
+# RHEL System Role: Postfix
+# ----------------------------------------------------------------#
+# ----------------------------------------------------------------
+# POSTFIX CONFIGURATION for RHEL System Role
+# ----------------------------------------------------------------
+
+# --- 1. Variables OUTSIDE of main.cf ---
+postfix_check: false # Do not run 'postfix check' before restart (as seen in prior examples)
+
+# --- 2. Variables for /etc/postfix/ Files (To force config execution) ---
+# Defines a simple canonical map file, which forces the role to run the 'Postmap' and
+# 'Configure Postfix' tasks, thus applying all main.cf settings.
+postfix_files:
+  - name: canonical
+    # Example content to map root mail to postmaster (can be adapted or left simple)
+    content: |
+      root postmaster
+    postmap: true
+
+# --- 3. CORE CONFIGURATION (All parameters that go into /etc/postfix/main.cf) ---
+postfix_conf:
+  # --- CRITICAL FIXES (Resolved the postconf error) ---
+  inet_interfaces: 'loopback-only'
+  inet_protocols: 'ipv4'
+
+  # --- CORE FUNCTIONALITY ---
+  relayhost: '[smtp.si.edu]'
+  myhostname: "{{ ansible_facts['hostname'] }}"
+  mydestination: "$myhostname, localhost.$mydomain, localhost"
+  mydomain: 'si.edu'
+  myorigin: 'si.edu'
+  mynetworks: '127.0.0.1/32' # Recommended specific loopback trust
+
+  # --- SECURITY / RESTRICTIONS ---
+  # CRITICAL: This is defined as a list, then joined into a single comma-separated
+  # string that Postfix requires, using the Jinja filter.
+  smtpd_recipient_restrictions: "{{
+    [
+      'permit_mynetworks',
+      'reject_unauth_destination',
+      'reject_invalid_hostname',
+      'reject_non_fqdn_hostname',
+      'reject_non_fqdn_sender',
+      'reject_non_fqdn_recipient',
+      'reject_unknown_sender_domain',
+      'reject_unknown_recipient_domain',
+      'reject_rbl_client sbl.spamhaus.org',
+      'reject_rbl_client cbl.abuseat.org',
+      'reject_rbl_client dul.dnsbl.sorbs.net',
+      'permit'
+    ] | join(',') }}"

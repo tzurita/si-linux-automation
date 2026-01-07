@@ -1,0 +1,24 @@
+---
+- name: "Postfix | Configure main.cf with core parameters (Manual Ini-style)"
+  tags: [connectivity, postfix]
+  community.general.ini_file:
+    path: /etc/postfix/main.cf
+    section: '' # Targets the global configuration scope
+    option: "{{ item.key }}"
+    value: "{{ item.value }}"
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    # Network Fixes (to ensure Postfix starts)
+    - { key: 'inet_interfaces', value: 'localhost' }
+    - { key: 'inet_protocols', value: 'ipv4' }
+  notify: Restart postfix
+
+- name: "Configure Postfix via RHEL Role"
+  ansible.builtin.include_role:
+    name: redhat.rhel_system_roles.postfix
+  vars:
+    postfix_inet_interfaces: 'localhost'
+    # when: not (is_test_container | default(false))

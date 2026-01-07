@@ -1,0 +1,8 @@
+---
+- name: "Configure FirewallD via RHEL Role"
+  ansible.builtin.include_role:
+    name: redhat.rhel_system_roles.firewall
+    # when: not (is_test_container | default(false))
+  vars:
+    # Use platform-python for 8, but standard python3 for 9 (and others)
+    ansible_python_interpreter: "{{ (ansible_distribution_major_version == '8') | ternary('/usr/libexec/platform-python', '/usr/bin/python3') }}"

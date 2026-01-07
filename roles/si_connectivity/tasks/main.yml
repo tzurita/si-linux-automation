@@ -1,0 +1,13 @@
+---
+# Main entry point for Phase 3
+- name: "Connectivity | Firewall (System Role)"
+  ansible.builtin.include_tasks: firewall.yml
+  tags: [connectivity, firewall]
+
+- name: "Connectivity | SSHD (System Role)"
+  ansible.builtin.include_tasks: ssh.yml
+  tags: [connectivity, ssh]
+
+- name: "Connectivity | Postfix (System Role)"
+  ansible.builtin.include_tasks: postfix.yml
+  tags: [connectivity, postfix]

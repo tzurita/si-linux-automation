@@ -1,0 +1,12 @@
+---
+# Base packages to install on every Smithsonian RHEL node
+foundation_packages:
+  - vim
+
+# Time synchronization settings
+foundation_ntp_servers:
+  - hostname: pool.ntp.org
+    iburst: true
+
+# Automatic update settings
+foundation_dnf_automatic_install: true

@@ -1,0 +1,75 @@
+---
+# ----------------------------------------------------------------
+# Phase 1: Foundation Variables
+# ----------------------------------------------------------------
+
+# ----------------------------------------------------------------
+# EPEL Repo Installation
+# ----------------------------------------------------------------
+epel_repo_url: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm"
+
+# ----------------------------------------------------------------
+# Package Management
+# ----------------------------------------------------------------
+base_packages:
+  - git
+  # - cargo
+  - dnf-utils
+  - fastfetch
+  - fontconfig
+  - fzf
+  - gcc
+  - git
+  - kitty-terminfo
+  - lsof
+  # - lynx
+  - make
+  - ncdu
+  - neovim
+  - net-tools
+  # - openscap-scanner
+  - postfix
+  - ripgrep
+  # - scap-security-guide
+  - unzip
+  - zsh
+
+# ----------------------------------------------------------------
+# DNF Automatic Update Policy
+# ----------------------------------------------------------------
+# DNF Automatic Policy
+dnf_automatic_download_updates: "yes"
+dnf_automatic_apply_updates: "no"
+dnf_automatic_emit_via: "email"
+dnf_automatic_upgrade_type: "default"
+
+# Email Settings
+dnf_automatic_email_from: "dnf_update@si.edu"
+dnf_automatic_email_to: "zuritat@si.edu,hargism@si.edu"
+dnf_automatic_email_host: "localhost"
+
+# ----------------------------------------------------------------
+# Timezone Configuration (Handled by 'system' role or separate task)
+# ----------------------------------------------------------------
+system_timezone: "America/New_York"
+
+# ----------------------------------------------------------------
+# RHEL System Role: Timesync Configuration
+# ----------------------------------------------------------------
+# Maps to 'ntp_manage_config: true'
+timesync_manage_config: true
+
+# Maps to 'ntp_servers'
+timesync_ntp_servers:
+  - hostname: ah-ntp.si.edu
+    iburst: true
+  - hostname: si-ntp-01.si.edu
+    iburst: true
+
+# Maps to 'ntp_restrict'
+# Note: RHEL 8/9 uses Chrony, which denies external access by default.
+# You strictly don't need configuration to restrict to 127.0.0.1,
+# but if you want to be explicit within the role's custom settings:
+timesync_chrony_custom_settings:
+  - "bindcmdaddress 127.0.0.1"
+  - "bindcmdaddress ::1"

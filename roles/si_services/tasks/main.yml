@@ -1,0 +1,8 @@
+---
+- name: "Services | Cron Configuration"
+  ansible.builtin.include_tasks: cron.yml
+  tags: [services, cron]
+
+- name: "Services | NRPE Monitoring"
+  ansible.builtin.include_tasks: nrpe.yml
+  tags: [services, nrpe]
