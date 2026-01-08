@@ -47,7 +47,7 @@
         splunk_admin_pass: "{{ lookup('community.general.random_string', length=16, min_lower=2, min_upper=2, min_numeric=2, min_special=2) }}"
 
     - name: Splunk | Generate SHA512 hash using openssl
-      ansible.builtin.shell: "openssl passwd -6 {{ splunk_admin_pass | quote }}"
+      ansible.builtin.shell: "openssl passwd -6 -- {{ splunk_admin_pass | quote }}"
       register: openssl_hash
       changed_when: false
 
